@@ -53,7 +53,7 @@ class CustomerSegmentationApp:
         _return_: preprocess data
         """
         if self.data is not None:
-            categorical_features = ["Gender, Region"]
+            categorical_features = ["Gender", "Region"]
             self.data = pd.get_dummies(
                 self.data, columns=categorical_features, drop_first=True
             )
