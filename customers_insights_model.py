@@ -76,7 +76,7 @@ class CustomerSegmentationApp:
         if self.data is not None:
             st.subheader("Customer Segmentation")
             n_clusters = st.slider(
-                "Select Number of Clusters", min_value=2, max_value=10, value=4
+                "Select Number of Clusters", min_value=2, max_value=10, value=3
             )
             kmeans = KMeans(n_clusters=n_clusters, random_state=42)
             self.data["Cluster"] = kmeans.fit_predict(
