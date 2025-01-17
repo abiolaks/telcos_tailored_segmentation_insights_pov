@@ -8,16 +8,14 @@ def main():
     st.title("Customer Value Management")
     st.header("Customer Segmentation and Insights Use Case")
 
-    st.subheader("Data Loading")
-    if st.button("Load Data"):
-        app.load_data()
-        app.preprocess_data()
-        st.divider()
-        st.subheader("Clustering and Customer Segment Analysis")
-        app.cluster_data()
-        st.divider()
-        st.subheader("Cluster Insight")
-        app.generate_cluster_insights()
+    app.load_data()
+    app.preprocess_data()
+    st.divider()
+    st.subheader("Clustering and Customer Segment Analysis")
+    app.cluster_data()
+    st.divider()
+    st.subheader("Cluster Insight")
+    app.generate_cluster_insights()
 
     st.divider()
 
