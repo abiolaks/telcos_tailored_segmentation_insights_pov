@@ -1,0 +1,2 @@
+# telcos_tailored_segmentation_insights_pov
+Building a customer segmentation with tailored insights
