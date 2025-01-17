@@ -22,7 +22,7 @@ class CustomerSegmentationApp:
         """_summary_: Initialize and return the OpenAI API client.
         _return_: OpenAI API client
         """
-        api_key = st.secrets.get("OPENAI_API_KEY")
+        api_key = st.secrets["secrets"]["OPENAI_API_KEY"]
         if not api_key:
             st.error("No OpenAI key found, Please set your API key. ")
             return None
@@ -98,10 +98,10 @@ class CustomerSegmentationApp:
 
             st.success("Clustering completed.")
             self.clustered_data = self.data
-            self.cluster_centers = kmeans.cluster_centers_
+            # self.cluster_centers = kmeans.cluster_centers_
         else:
             st.warning("Preprocessed data is required for clustering")
-        return self.clustered_data, self.cluster_centers
+        return self.clustered_data
 
     # Generate insights
     def generate_cluster_insights(self):
