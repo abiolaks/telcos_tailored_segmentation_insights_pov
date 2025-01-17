@@ -10,11 +10,14 @@ def main():
 
     st.subheader("Data Loading")
     if st.button("Load Data"):
-        data = app.load_data()
-        data = app.preprocess_data(data)
+        app.load_data()
+        app.preprocess_data()
         st.divider()
         st.subheader("Clustering and Customer Segment Analysis")
-        app.cluster_data(data)
+        app.cluster_data()
+        st.divider()
+        st.subheader("Cluster Insight")
+        app.generate_cluster_insights()
 
     st.divider()
 
@@ -30,9 +33,9 @@ def main():
 
     # st.divider()
 
-    st.subheader("Cluster Analysis")
-    if st.button("Generate Cluster Insights"):
-        app.generate_cluster_insights()
+    # st.subheader("Cluster Analysis")
+    # if st.button("Generate Cluster Insights"):
+    #   app.generate_cluster_insights()
 
 
 if __name__ == "__main__":
