@@ -59,7 +59,7 @@ class CustomerSegmentationApp:
             )
             self.data.fillna(self.data.median(), inplace=True)
             # features engineering
-            self.data["Recency"] = 30 - self.data["lastPurchaseDays"]
+            self.data["Recency"] = 30 - self.data["LastPurchaseDays"]
             self.data["Frequency"] = self.data["CallsMade"] / 30
             self.data["Monetary"] = self.data["MonthlySpending"]
 
