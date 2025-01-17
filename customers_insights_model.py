@@ -86,14 +86,14 @@ class CustomerSegmentationApp:
             # Visualization of clusters
             plt.figure(figsize=(10, 6))
             plt.scatter(
+                self.data["Monetary"],
                 self.data["Recency"],
-                self.data["Frequency"],
                 c=self.data["Cluster"],
                 cmap="viridis",
             )
             plt.title("Customer Segmentation")
             plt.xlabel("Recency")
-            plt.ylabel("Frequency")
+            plt.ylabel("Monetary")
             st.pyplot(plt)
 
             st.success("Clustering completed.")
