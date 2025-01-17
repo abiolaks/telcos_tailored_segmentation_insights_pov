@@ -70,43 +70,44 @@ class CustomerSegmentationApp:
             st.success("Data Preprocessed Successfully.")
         return self.data
 
-        def cluster_data(self):
-            """_summary_: Perform customer segmentation using"""
-            if self.data is not None:
-                st.subheader("Customer Segmentation")
-                n_clusters = st.slider(
-                    "Select Number of Clusters", min_value=2, max_value=10, value=4
-                )
-                kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-                self.data["Cluster"] = kmeans.fit_predict(
-                    self.data[["Recency", "Frequency", "Monetary", "DataUsageGB"]]
-                )
+    # cluster Analysis
+    def cluster_data(self):
+        """_summary_: Perform customer segmentation using"""
+        if self.data is not None:
+            st.subheader("Customer Segmentation")
+            n_clusters = st.slider(
+                "Select Number of Clusters", min_value=2, max_value=10, value=4
+            )
+            kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+            self.data["Cluster"] = kmeans.fit_predict(
+                self.data[["Recency", "Frequency", "Monetary", "DataUsageGB"]]
+            )
 
-                # Visualization of clusters
-                plt.figure(figsize=(10, 6))
-                plt.scatter(
-                    self.data["Recency"],
-                    self.data["Frequency"],
-                    c=self.data["Cluster"],
-                    cmap="viridis",
-                )
-                plt.title("Customer Segmentation")
-                plt.xlabel("Recency")
-                plt.ylabel("Frequency")
-                st.pyplot(plt)
+            # Visualization of clusters
+            plt.figure(figsize=(10, 6))
+            plt.scatter(
+                self.data["Recency"],
+                self.data["Frequency"],
+                c=self.data["Cluster"],
+                cmap="viridis",
+            )
+            plt.title("Customer Segmentation")
+            plt.xlabel("Recency")
+            plt.ylabel("Frequency")
+            st.pyplot(plt)
 
-                st.success("Clustering completed.")
-                self.clustered_data = self.data
-                self.cluster_centers = kmeans.cluster_centers_
-            else:
-                st.warning("Preprocessed data is required for clustering")
-            return self.clustered_data, self.cluster_centers
+            st.success("Clustering completed.")
+            self.clustered_data = self.data
+            self.cluster_centers = kmeans.cluster_centers_
+        else:
+            st.warning("Preprocessed data is required for clustering")
+        return self.clustered_data, self.cluster_centers
 
-        # Generate insights
-        def generate_cluster_insights(self):
-            """_summary_:Generate insights for each cluster using openAI"""
-            if self.client and self.clustered_data is not None:
-                system_prompt = """
+    # Generate insights
+    def generate_cluster_insights(self):
+        """_summary_:Generate insights for each cluster using openAI"""
+        if self.client and self.clustered_data is not None:
+            system_prompt = """
                 You are a Telecommunication Customer Insights Analyst. You are tasked with analyzing Customer Clusters
                 for actionable insights.
                 
@@ -122,25 +123,28 @@ class CustomerSegmentationApp:
                 Strictly stick to the output and format it in Markdown for each cluster.
                 
                 """
-                cluster_summary = (
-                    self.clustered_data.groupby("Cluster").mean().reset_index()
-                )
-                for cluster_id in cluster_summary["Cluster"]:
-                    cluster_summary.loc[cluster_summary["Cluster"] == cluster_id]
-                    prompt = f"Analyze the following customer data for Cluster{cluster_id}: {cluster_data.to_dict()}"
+            cluster_summary = (
+                self.clustered_data.groupby("Cluster").mean().reset_index()
+            )
+            for cluster_id in cluster_summary["Cluster"]:
+                cluster_data = cluster_summary.loc[
+                    cluster_summary["Cluster"] == cluster_id
+                ]
+                prompt = f"Analyze the following customer data for Cluster{cluster_id}: {cluster_data.to_dict()}"
 
-                    # Generative AI API call for Insights
-                    response = self.client.chat.completions.create(
-                        model="gpt-4",
-                        messages=[
-                            {"role": "system", "content": prompt},
-                        ],
-                        temperature=0.7,
-                        top_p=1,
-                        max_tokens=600,
-                    )
-                    insights = response.choices[0].message.content
-                    st.write(f"Cluster {cluster_id} Insights:")
-                    st.write(insights)
-                else:
-                    st.warning("Client or clustered data not available")
+                # Generative AI API call for Insights
+                response = self.client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": prompt},
+                    ],
+                    temperature=0.7,
+                    top_p=1,
+                    max_tokens=600,
+                )
+                insights = response.choices[0].message.content
+                st.write(f"Cluster {cluster_id} Insights:")
+                st.write(insights)
+            else:
+                st.warning("Client or clustered data not available")
