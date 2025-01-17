@@ -46,3 +46,101 @@ class CustomerSegmentationApp:
             st.warning("Please upload a csv file.")
 
         return self.data
+
+    # Preprocess data
+    def preprocess_data(self):
+        """_summary_: scale the numerical values, encode categorical and fill null values.
+        _return_: preprocess data
+        """
+        if self.data is not None:
+            categorical_features = ["Gender, Region"]
+            self.data = pd.get_dummies(
+                self.data, columns=categorical_features, drop_first=True
+            )
+            self.data.fillna(self.data.median(), inplace=True)
+            # features engineering
+            self.data["Recency"] = 30 - self.data["lastPurchaseDays"]
+            self.data["Frequency"] = self.data["CallsMade"] / 30
+            self.data["Monetary"] = self.data["MonthlySpending"]
+
+            # scalling numerical features
+            scaler = StandardScaler()
+            features = ["Recency", "Frequency", "Monetary", "DataUsageGB"]
+            self.data[features] = scaler.fit_transform(self.data[features])
+            st.success("Data Preprocessed Successfully.")
+        return self.data
+
+        def cluster_data(self):
+            """_summary_: Perform customer segmentation using"""
+            if self.data is not None:
+                st.subheader("Customer Segmentation")
+                n_clusters = st.slider(
+                    "Select Number of Clusters", min_value=2, max_value=10, value=4
+                )
+                kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+                self.data["Cluster"] = kmeans.fit_predict(
+                    self.data[["Recency", "Frequency", "Monetary", "DataUsageGB"]]
+                )
+
+                # Visualization of clusters
+                plt.figure(figsize=(10, 6))
+                plt.scatter(
+                    self.data["Recency"],
+                    self.data["Frequency"],
+                    c=self.data["Cluster"],
+                    cmap="viridis",
+                )
+                plt.title("Customer Segmentation")
+                plt.xlabel("Recency")
+                plt.ylabel("Frequency")
+                st.pyplot(plt)
+
+                st.success("Clustering completed.")
+                self.clustered_data = self.data
+                self.cluster_centers = kmeans.cluster_centers_
+            else:
+                st.warning("Preprocessed data is required for clustering")
+            return self.clustered_data, self.cluster_centers
+
+        # Generate insights
+        def generate_cluster_insights(self):
+            """_summary_:Generate insights for each cluster using openAI"""
+            if self.client and self.clustered_data is not None:
+                system_prompt = """
+                You are a Telecommunication Customer Insights Analyst. You are tasked with analyzing Customer Clusters
+                for actionable insights.
+                
+                Give a concise and detailed response with the specified output format below in an easy-to-understand manner
+                for the Marketing, Sales Team to act on.
+                
+                Output in Markdown
+                1. Demographic Insights
+                2. Customer Behaviour Analysis
+                3. Tailor Marketing Strategies
+                4. Product and Pricing Strategies
+                
+                Strictly stick to the output and format it in Markdown for each cluster.
+                
+                """
+                cluster_summary = (
+                    self.clustered_data.groupby("Cluster").mean().reset_index()
+                )
+                for cluster_id in cluster_summary["Cluster"]:
+                    cluster_summary.loc[cluster_summary["Cluster"] == cluster_id]
+                    prompt = f"Analyze the following customer data for Cluster{cluster_id}: {cluster_data.to_dict()}"
+
+                    # Generative AI API call for Insights
+                    response = self.client.chat.completions.create(
+                        model="gpt-4",
+                        messages=[
+                            {"role": "system", "content": prompt},
+                        ],
+                        temperature=0.7,
+                        top_p=1,
+                        max_tokens=600,
+                    )
+                    insights = response.choices[0].message.content
+                    st.write(f"Cluster {cluster_id} Insights:")
+                    st.write(insights)
+                else:
+                    st.warning("Client or clustered data not available")
