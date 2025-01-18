@@ -1,13 +1,6 @@
 import streamlit as st
 from customers_insights_model import CustomerSegmentationApp
 
-st.set_page_config(
-    page_title="Customer Value Management",
-    page_icon=":moneybag:",
-    layout="wide",
-    theme="dark",  # Set the theme to 'dark'
-)
-
 
 def main():
     app = CustomerSegmentationApp()
