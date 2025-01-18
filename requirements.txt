@@ -1,2 +1,4 @@
 openai
 Scikit-learn
+matplotlib
+pandas
