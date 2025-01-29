@@ -11,6 +11,7 @@ def main():
     app.load_data()
     app.preprocess_data()
     st.divider()
+
     st.subheader("Clustering and Customer Segment Analysis")
     app.cluster_data()
     st.divider()
