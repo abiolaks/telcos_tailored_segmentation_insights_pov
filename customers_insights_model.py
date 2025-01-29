@@ -98,7 +98,7 @@ class CustomerSegmentationApp:
 
             st.success("Clustering completed.")
             self.clustered_data = self.data
-            self.clustered_data.to_csv("/data/clustered_data.csv", index=False)
+            self.clustered_data.to_csv("clustered_data.csv", index=False)
             # self.cluster_centers = kmeans.cluster_centers_
         else:
             st.warning("Preprocessed data is required for clustering")
