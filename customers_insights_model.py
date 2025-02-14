@@ -122,6 +122,7 @@ class CustomerSegmentationApp:
                 4. Product and Pricing Strategies
                 
                 Strictly stick to the output and format it in Markdown for each cluster.
+                in your response do not give values with negative numerical values.use absolute values.instead of saying -0.5 say 0.5
                 
                 """
             cluster_summary = (
