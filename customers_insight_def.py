@@ -4,6 +4,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import pandas as pd
+import plotly.graph_objects as go
 
 
 class CustomerSegmentationApp_1:
@@ -73,18 +74,40 @@ class CustomerSegmentationApp_1:
             return self.clustered_data
 
     def plot_clusters(self):
-        """Visualize the clusters."""
-        plt.figure(figsize=(10, 6))
-        plt.scatter(
-            self.clustered_data["Monetary"],
-            self.clustered_data["Recency"],
-            c=self.clustered_data["Cluster"],
-            cmap="viridis",
-        )
-        plt.title("Customer Segmentation")
-        plt.xlabel("Recency")
-        plt.ylabel("Monetary")
-        return plt
+        """Visualize the clusters in 3D using Plotly."""
+        if self.clustered_data is not None:
+            # Create a 3D scatter plot
+            fig = go.Figure()
+
+            # Add a trace for each cluster
+            for cluster_id in sorted(self.clustered_data["Cluster"].unique()):
+                cluster_data = self.clustered_data[
+                    self.clustered_data["Cluster"] == cluster_id
+                ]
+                fig.add_trace(
+                    go.Scatter3d(
+                        x=cluster_data["Recency"],
+                        y=cluster_data["Frequency"],
+                        z=cluster_data["Monetary"],
+                        mode="markers",
+                        marker=dict(size=5, opacity=0.8),
+                        name=f"Cluster {cluster_id}",
+                    )
+                )
+
+            # Update layout for better visualization
+            fig.update_layout(
+                title="3D Customer Segmentation",
+                scene=dict(
+                    xaxis_title="Recency",
+                    yaxis_title="Frequency",
+                    zaxis_title="Monetary",
+                ),
+                margin=dict(l=0, r=0, b=0, t=30),
+                legend=dict(x=0.1, y=0.9),
+            )
+
+            return fig
 
     def generate_cluster_insights(self):
         """Generate insights for each cluster using OpenAI."""
