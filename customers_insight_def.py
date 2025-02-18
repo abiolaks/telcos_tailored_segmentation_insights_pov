@@ -1,34 +1,25 @@
-# import the require libraries needed
-import streamlit as st  # for model UI and deployment
-from openai import OpenAI  # for open ai api access
-from sklearn.cluster import KMeans  # for clustering analysis
-from sklearn.preprocessing import (
-    StandardScaler,
-)  # to ensure that numerical features are on the same scale
-import matplotlib.pyplot as plt  # for visualization
-import pandas as pd  # for data analyis
+import streamlit as st
+from openai import OpenAI
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+import matplotlib.pyplot as plt
+import pandas as pd
 
 
-# create a class : for resuabilty and code extension
-class CustomerSegmentationApp:
-    # creating a function for constructor to instantiate the class
+class CustomerSegmentationApp_1:
     def __init__(self):
         self.data = None
         self.clustered_data = None
-        self.cluster_centers = None
         self.client = self.get_openai_client()
 
     def get_openai_client(self):
-        """_summary_: Initialize and return the OpenAI API client.
-        _return_: OpenAI API client
-        """
+        """Initialize and return the OpenAI API client."""
         api_key = st.secrets["secrets"]["OPENAI_API_KEY"]
         if not api_key:
-            st.error("No OpenAI key found, Please set your API key. ")
+            st.error("No OpenAI key found. Please set your API key.")
             return None
         return OpenAI(api_key=api_key)
 
-    # Load data, data pipeline that pick from azure blob or upload csv from machine
     def load_data(self):
         """_summary_:Handle file upload and load customer data.
         _return_: the loaded data
@@ -47,67 +38,56 @@ class CustomerSegmentationApp:
 
         return self.data
 
-    # Preprocess data
     def preprocess_data(self):
-        """_summary_: scale the numerical values, encode categorical and fill null values.
-        _return_: preprocess data
-        """
+        """Preprocess the data: scaling, encoding, and feature engineering."""
         if self.data is not None:
+            # Handle categorical features
             categorical_features = ["Gender", "Region"]
             self.data = pd.get_dummies(
                 self.data, columns=categorical_features, drop_first=True
             )
+
+            # Fill missing values
             self.data.fillna(self.data.median(), inplace=True)
-            # features engineering
+
+            # Feature engineering
             self.data["Recency"] = 30 - self.data["LastPurchaseDays"]
             self.data["Frequency"] = self.data["CallsMade"] / 30
             self.data["Monetary"] = self.data["MonthlySpending"]
 
-            # scalling numerical features
+            # Scale numerical features
             scaler = StandardScaler()
             features = ["Recency", "Frequency", "Monetary", "DataUsageGB"]
             self.data[features] = scaler.fit_transform(self.data[features])
-            st.success("Data Preprocessed Successfully.")
-        return self.data
 
-    # cluster Analysis
-    def cluster_data(self, n_clusters):
-        """_summary_: Perform customer segmentation using"""
-        self.n_clusters = n_clusters
+            return self.data
+
+    def cluster_data(self, num_clusters):
+        """Perform customer segmentation using KMeans clustering."""
         if self.data is not None:
-            # st.subheader("Customer Segmentation")
-            # n_clusters = st.slider(
-            #   "Select Number of Clusters", min_value=2, max_value=10, value=3
-            # )
-            kmeans = KMeans(n_clusters=self.n_clusters, random_state=42)
+            kmeans = KMeans(n_clusters=num_clusters, random_state=42)
             self.data["Cluster"] = kmeans.fit_predict(
                 self.data[["Recency", "Frequency", "Monetary", "DataUsageGB"]]
             )
-
-            # Visualization of clusters
-            plt.figure(figsize=(10, 6))
-            plt.scatter(
-                self.data["Monetary"],
-                self.data["Recency"],
-                c=self.data["Cluster"],
-                cmap="viridis",
-            )
-            plt.title("Customer Segmentation")
-            plt.xlabel("Recency")
-            plt.ylabel("Monetary")
-            st.pyplot(plt)
-
-            st.success("Clustering completed.")
             self.clustered_data = self.data
-            self.clustered_data.to_csv("clustered_data.csv", index=False)
-            # self.cluster_centers = kmeans.cluster_centers_
-        else:
-            st.warning("Preprocessed data is required for clustering")
-        return self.clustered_data
+            return self.clustered_data
 
-    # Generate insights
+    def plot_clusters(self):
+        """Visualize the clusters."""
+        plt.figure(figsize=(10, 6))
+        plt.scatter(
+            self.clustered_data["Monetary"],
+            self.clustered_data["Recency"],
+            c=self.clustered_data["Cluster"],
+            cmap="viridis",
+        )
+        plt.title("Customer Segmentation")
+        plt.xlabel("Recency")
+        plt.ylabel("Monetary")
+        return plt
+
     def generate_cluster_insights(self):
-        """_summary_:Generate insights for each cluster using openAI"""
+        """Generate insights for each cluster using OpenAI."""
         if self.client and self.clustered_data is not None:
             system_prompt = """
                 You are a Telecommunication Customer Insights Analyst. You are tasked with analyzing Customer Clusters
@@ -124,18 +104,16 @@ class CustomerSegmentationApp:
                 
                 Strictly stick to the output and format it in Markdown for each cluster.
                 in your response do not give values with negative numerical values.use absolute values.instead of saying -0.5 say 0.5
-                
                 """
             cluster_summary = (
                 self.clustered_data.groupby("Cluster").mean().reset_index()
             )
+            insights = []
             for cluster_id in cluster_summary["Cluster"]:
                 cluster_data = cluster_summary.loc[
                     cluster_summary["Cluster"] == cluster_id
                 ]
-                prompt = f"Analyze the following customer data for Cluster{cluster_id}: {cluster_data.to_dict()}"
-
-                # Generative AI API call for Insights
+                prompt = f"Analyze the following customer data for Cluster {cluster_id}: {cluster_data.to_dict()}"
                 response = self.client.chat.completions.create(
                     model="gpt-4",
                     messages=[
@@ -146,8 +124,9 @@ class CustomerSegmentationApp:
                     top_p=1,
                     max_tokens=600,
                 )
-                insights = response.choices[0].message.content
-                st.write(f"Cluster {cluster_id} Insights:")
-                st.write(insights)
-            else:
-                st.warning("Client or clustered data not available")
+                insights.append(response.choices[0].message.content)
+            return insights
+
+    def get_clustered_data(self):
+        """Return the clustered data for download."""
+        return self.clustered_data
