@@ -67,19 +67,21 @@ def main():
     st.divider()
 
     # Cluster Insights
+    data = app.cluster_data(num_clusters)
     st.subheader("🔍 Cluster Insights")
     if st.button("Generate Insights"):
         with st.spinner("Generating insights using LLMs..."):
-            insights = app.generate_cluster_insights()
+            insights = app.generate_cluster_insights(data)
             st.success("Insights generated successfully!")
             for i, insight in enumerate(insights):
                 with st.expander(f"Cluster {i+1} Insights"):
-                    st.markdown(f"**Summary:** {insight['summary']}")
-                    st.markdown(f"**Recommendations:** {insight['recommendations']}")
-                    st.markdown("**Key Statistics:**")
-                    st.table(
-                        insight["statistics"]
-                    )  # Display cluster statistics in a table
+                    st.markdown(insight)  # Display the raw OpenAI response as Markdown
+                    # st.markdown(f"**Summary:** {insight['summary']}")
+                    # st.markdown(f"**Recommendations:** {insight['recommendations']}")
+                    # st.markdown("**Key Statistics:**")
+                    # st.table(
+                    #   insight["statistics"]
+                    # )  # Display cluster statistics in a table
 
     st.divider()
 

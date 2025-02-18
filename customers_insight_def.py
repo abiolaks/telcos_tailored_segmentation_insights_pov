@@ -109,34 +109,52 @@ class CustomerSegmentationApp_1:
 
             return fig
 
-    def generate_cluster_insights(self):
+    def generate_cluster_insights(self, data):
+        self.data = data
         """Generate insights for each cluster using OpenAI."""
-        if self.client and self.clustered_data is not None:
-            system_prompt = """
-                You are a Telecommunication Customer Insights Analyst. You are tasked with analyzing Customer Clusters
-                for actionable insights.
-                
-                Give a concise and detailed response with the specified output format below in an easy-to-understand manner
-                for the Marketing, Sales Team to act on.
-                
-                Output in Markdown
-                1. Demographic Insights
-                2. Customer Behaviour Analysis
-                3. Tailor Marketing Strategies
-                4. Product and Pricing Strategies
-                
-                Strictly stick to the output and format it in Markdown for each cluster.
-                in your response do not give values with negative numerical values.use absolute values.instead of saying -0.5 say 0.5
-                """
-            cluster_summary = (
-                self.clustered_data.groupby("Cluster").mean().reset_index()
-            )
-            insights = []
-            for cluster_id in cluster_summary["Cluster"]:
+        insights = []  # Initialize an empty list to store insights
+
+        # Check if the OpenAI client is available
+        if self.client is None:
+            st.error("OpenAI client is not initialized. Please check your API key.")
+            return insights  # Return an empty list
+
+        # Check if clustered data is available
+        if self.data is None:
+            st.error("Clustered data is not available. Please run clustering first.")
+            return insights  # Return an empty list
+
+        # System prompt for OpenAI
+        system_prompt = """
+            You are a Telecommunication Customer Insights Analyst. You are tasked with analyzing Customer Clusters
+            for actionable insights.
+            
+            Give a concise and detailed response with the specified output format below in an easy-to-understand manner
+            for the Marketing, Sales Team to act on.
+            
+            Output in Markdown
+            1. Demographic Insights
+            2. Customer Behaviour Analysis
+            3. Tailor Marketing Strategies
+            4. Product and Pricing Strategies
+            
+            Strictly stick to the output and format it in Markdown for each cluster.
+            in your response do not give values with negative numerical values.use absolute values.instead of saying -0.5 say 0.5
+            """
+
+        # Generate cluster summary statistics
+        cluster_summary = self.clustered_data.groupby("Cluster").mean().reset_index()
+
+        # Generate insights for each cluster
+        for cluster_id in cluster_summary["Cluster"]:
+            try:
+                # Prepare the prompt for OpenAI
                 cluster_data = cluster_summary.loc[
                     cluster_summary["Cluster"] == cluster_id
                 ]
                 prompt = f"Analyze the following customer data for Cluster {cluster_id}: {cluster_data.to_dict()}"
+
+                # Call OpenAI API
                 response = self.client.chat.completions.create(
                     model="gpt-4",
                     messages=[
@@ -147,8 +165,18 @@ class CustomerSegmentationApp_1:
                     top_p=1,
                     max_tokens=600,
                 )
+
+                # Append the generated insight to the list
                 insights.append(response.choices[0].message.content)
-            return insights
+
+            except Exception as e:
+                # Log any errors that occur during the API call
+                st.error(
+                    f"Error generating insights for Cluster {cluster_id}: {str(e)}"
+                )
+                insights.append(f"Error generating insights for Cluster {cluster_id}.")
+
+        return insights  # Return the list of insights
 
     def get_clustered_data(self):
         """Return the clustered data for download."""
